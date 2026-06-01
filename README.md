@@ -71,6 +71,8 @@ Deploy to the cloud for a live demo URL (portfolio / resume).
 
 See **[DEPLOY.md](DEPLOY.md)** for step-by-step instructions, including **PostgreSQL on Render** so user data persists after restart.
 
+**Live URL:-** `https://bank-management-system-mtws.onrender.com`
+
 ## Project Structure
 
 ```
@@ -104,10 +106,6 @@ bank-management-system/
 - Foreign keys and balance constraints enforced at the database level.
 - All significant actions are logged in `audit_logs`.
 - Set a strong `SECRET_KEY` environment variable before deploying to production.
-
-## Deployement
-
-**Live URL:-** `https://bank-management-system-mtws.onrender.com`
 
 ## License
 
