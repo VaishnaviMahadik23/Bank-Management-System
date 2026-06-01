@@ -1,6 +1,11 @@
 import os
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# PostgreSQL on Render: set DATABASE_URL from your Postgres instance
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+
+# Local development (when DATABASE_URL is not set)
 DATABASE_PATH = os.environ.get(
     "DATABASE_PATH", os.path.join(BASE_DIR, "data", "bank.db")
 )

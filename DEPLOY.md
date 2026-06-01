@@ -1,85 +1,93 @@
-# Deploy Bank Management System
+# Deploy Bank Management System (with persistent PostgreSQL)
 
-This guide deploys the app to **[Render](https://render.com)** (free tier, connects to GitHub).
-
-**Live URL example:** `https://bank-management-system-xxxx.onrender.com`
+Use **Option 2: PostgreSQL on Render** so registered users and transactions are **saved permanently** (no more “user not found” after restart).
 
 ---
 
-## Before you deploy
+## Part 1 — Create PostgreSQL database on Render
 
-1. Push your code to GitHub:  
-   `https://github.com/VaishnaviMahadik23/Bank-Management-System`
-
-2. Sign up at [render.com](https://render.com) (use **Sign in with GitHub**).
-
----
-
-## Option A — Deploy with Blueprint (easiest)
-
-1. Open [Render Dashboard](https://dashboard.render.com/).
-2. Click **New +** → **Blueprint**.
-3. Connect repository `VaishnaviMahadik23/Bank-Management-System`.
-4. Render reads `render.yaml` automatically.
-5. Click **Apply** → wait for build (2–5 minutes).
-6. Open the generated URL.
+1. Log in to [Render Dashboard](https://dashboard.render.com/).
+2. Click **New +** → **PostgreSQL**.
+3. Settings:
+   - **Name:** `bank-db` (or any name)
+   - **Database:** `bankmanagement`
+   - **User:** `bankuser`
+   - **Region:** Same as your web service
+   - **Plan:** **Free**
+4. Click **Create Database**.
+5. Wait until status is **Available**.
+6. Open the database → copy **Internal Database URL** (starts with `postgresql://` or `postgres://`).  
+   Use **Internal** URL for your web service on Render (not External).
 
 ---
 
-## Option B — Manual Web Service
+## Part 2 — Connect database to your Web Service
 
-1. **New +** → **Web Service**.
-2. Connect your GitHub repo `Bank-Management-System`.
-3. Use these settings:
+1. Open your **Web Service** (Bank Management System app).
+2. Go to **Environment**.
+3. Add variable:
 
-| Setting | Value |
-|---------|--------|
-| **Name** | `bank-management-system` |
-| **Region** | Singapore or closest to you |
-| **Branch** | `main` |
-| **Runtime** | Python 3 |
-| **Build Command** | `pip install -r requirements.txt` |
-| **Start Command** | `gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120` |
-| **Plan** | Free |
+   | Key | Value |
+   |-----|--------|
+   | `DATABASE_URL` | Paste **Internal Database URL** from Part 1 |
 
-4. **Environment variables** (Environment → Add):
+4. Ensure these also exist:
 
-| Key | Value |
-|-----|--------|
-| `FLASK_ENV` | `production` |
-| `SECRET_KEY` | *(Generate or paste a long random string)* |
+   | Key | Value |
+   |-----|--------|
+   | `FLASK_ENV` | `production` |
+   | `SECRET_KEY` | Long random string (Generate) |
 
-5. Click **Create Web Service**.
+5. Click **Save Changes**.
+6. Render will **redeploy** automatically (wait 2–5 minutes).
 
 ---
 
-## After deployment
+## Part 3 — Push latest code (PostgreSQL support)
 
-- **Admin login:** `admin` / `admin123`  
-  Change the password from **Profile** after first login.
-- Free tier may **sleep** after ~15 min idle; first visit can take 30–60 seconds to wake.
-- **SQLite on free tier:** Data persists while the service runs but can reset if Render rebuilds or moves your instance. Fine for demos/portfolio; use PostgreSQL for real production.
+In VS Code terminal:
 
----
-
-## Option C — PythonAnywhere (SQLite-friendly)
-
-1. Sign up at [pythonanywhere.com](https://www.pythonanywhere.com).
-2. Upload project or clone from GitHub (Bash console).
-3. Create virtualenv and `pip install -r requirements.txt`.
-4. **Web** tab → **Manual configuration** → Python 3.11.
-5. WSGI file:
-
-```python
-import sys
-path = '/home/YOUR_USERNAME/Bank-Management-System'
-if path not in sys.path:
-    sys.path.append(path)
-
-from wsgi import app as application
+```powershell
+cd d:\Z+Projects\bank-management-system
+git add .
+git commit -m "Add PostgreSQL support for persistent user data on Render"
+git push origin main
 ```
 
-6. Reload web app. Set `SECRET_KEY` and `FLASK_ENV=production` in WSGI or `.env`.
+After push, Render rebuilds the web service. On startup, tables and admin user are created in PostgreSQL.
+
+---
+
+## Part 4 — Test
+
+1. Open your live URL.
+2. **Register** a new user.
+3. **Log out**, close the browser, wait a few minutes (or redeploy once).
+4. **Log in** again with the same user → should work.
+
+Default admin (recreated if missing): `admin` / `admin123`
+
+---
+
+## New deploy from scratch (Blueprint)
+
+If creating everything new:
+
+1. Push code with `render.yaml` to GitHub.
+2. **New +** → **Blueprint** → select repo → **Apply**.
+3. Render creates **PostgreSQL + Web Service** and links `DATABASE_URL` automatically.
+
+---
+
+## Local development
+
+Without `DATABASE_URL`, the app uses **SQLite** (`data/bank.db`) as before:
+
+```powershell
+python app.py
+```
+
+To test PostgreSQL locally, set `DATABASE_URL` in `.env` (do not commit `.env`).
 
 ---
 
@@ -87,13 +95,13 @@ from wsgi import app as application
 
 | Problem | Fix |
 |---------|-----|
-| Build fails | Check `requirements.txt` and Python version in `runtime.txt` |
-| 502 / crash on start | Logs → ensure start command is `gunicorn wsgi:app ...` |
-| Login/session issues | Set `SECRET_KEY` and `FLASK_ENV=production` |
-| Database empty after redeploy | Expected on free Render; re-register or use paid disk / PostgreSQL |
+| Build error `psycopg2` | `requirements.txt` includes `psycopg2-binary`; redeploy |
+| Still losing users | Confirm `DATABASE_URL` is set on **Web Service** (not only on DB) |
+| `admin` works, new users don’t | Old SQLite deploy; add `DATABASE_URL` and redeploy |
+| Connection refused | Use **Internal** Database URL on Render |
 
 ---
 
-## Custom domain (optional)
+## Why not PythonAnywhere (Option 4)?
 
-Render → your service → **Settings** → **Custom Domains** → add your domain and DNS records.
+You already use Render. PostgreSQL on Render is the best fit: same platform, persistent data, and stronger for your resume (`Flask + PostgreSQL`).

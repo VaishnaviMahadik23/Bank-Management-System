@@ -69,7 +69,7 @@ Deploy to the cloud for a live demo URL (portfolio / resume).
 
 **Recommended:** [Render](https://render.com) (free tier + GitHub)
 
-See **[DEPLOY.md](DEPLOY.md)** for step-by-step instructions (Render Blueprint or manual setup, plus PythonAnywhere).
+See **[DEPLOY.md](DEPLOY.md)** for step-by-step instructions, including **PostgreSQL on Render** so user data persists after restart.
 
 ## Project Structure
 
