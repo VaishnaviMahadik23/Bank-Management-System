@@ -1,10 +1,11 @@
 import os
-import re
 import sqlite3
 
 from config import DATABASE_PATH, DATABASE_URL
 
 USE_POSTGRES = bool(DATABASE_URL and DATABASE_URL.strip())
+
+_PG_LOCK_ID = 8675309
 
 
 def _pg_url():
@@ -92,51 +93,95 @@ def get_db():
     return DbConnection(raw, is_postgres=False)
 
 
+def _parse_sql_statements(schema_path):
+    """Split SQL file into statements (handles comments and semicolons safely)."""
+    with open(schema_path, encoding="utf-8") as f:
+        lines = f.readlines()
+
+    chunks = []
+    current = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("--"):
+            continue
+        current.append(line)
+        if stripped.endswith(";"):
+            chunks.append("".join(current).strip().rstrip(";").strip())
+            current = []
+
+    if current:
+        remainder = "".join(current).strip().rstrip(";").strip()
+        if remainder:
+            chunks.append(remainder)
+    return chunks
+
+
+def _postgres_tables_exist(conn):
+    row = conn.execute(
+        """SELECT EXISTS (
+               SELECT 1 FROM information_schema.tables
+               WHERE table_schema = 'public' AND table_name = 'users'
+           ) AS ok"""
+    ).fetchone()
+    return bool(row and row["ok"])
+
+
 def _run_postgres_schema(conn):
     schema_path = os.path.join(os.path.dirname(__file__), "schema_postgres.sql")
-    with open(schema_path, encoding="utf-8") as f:
-        script = f.read()
-    statements = [
-        s.strip()
-        for s in re.split(r";\s*\n", script)
-        if s.strip() and not s.strip().startswith("--")
-    ]
-    for stmt in statements:
-        if stmt:
-            conn.execute(stmt)
+    for stmt in _parse_sql_statements(schema_path):
+        conn.execute(stmt + ";")
+        conn.commit()
+
+
+def _ensure_admin_user(conn):
+    admin = conn.execute(
+        "SELECT id FROM users WHERE username = ?", ("admin",)
+    ).fetchone()
+    if admin:
+        return
+
+    from werkzeug.security import generate_password_hash
+
+    conn.execute(
+        """INSERT INTO users (username, email, password_hash, full_name, role)
+           VALUES (?, ?, ?, ?, ?)""",
+        (
+            "admin",
+            "admin@bank.local",
+            generate_password_hash("admin123"),
+            "System Administrator",
+            "admin",
+        ),
+    )
     conn.commit()
 
 
 def init_db():
     conn = get_db()
 
-    if USE_POSTGRES:
-        _run_postgres_schema(conn)
-    else:
-        schema_path = os.path.join(os.path.dirname(__file__), "schema.sql")
-        with open(schema_path, encoding="utf-8") as f:
-            conn.executescript(f.read())
-        conn.commit()
+    try:
+        if USE_POSTGRES:
+            conn.execute("SELECT pg_advisory_lock(%s)", (_PG_LOCK_ID,))
+            conn.commit()
 
-    admin = conn.execute(
-        "SELECT id FROM users WHERE username = ?", ("admin",)
-    ).fetchone()
-    if not admin:
-        from werkzeug.security import generate_password_hash
+            if not _postgres_tables_exist(conn):
+                _run_postgres_schema(conn)
 
-        conn.execute(
-            """INSERT INTO users (username, email, password_hash, full_name, role)
-               VALUES (?, ?, ?, ?, ?)""",
-            (
-                "admin",
-                "admin@bank.local",
-                generate_password_hash("admin123"),
-                "System Administrator",
-                "admin",
-            ),
-        )
-        conn.commit()
-    conn.close()
+            _ensure_admin_user(conn)
+        else:
+            schema_path = os.path.join(os.path.dirname(__file__), "schema.sql")
+            with open(schema_path, encoding="utf-8") as f:
+                conn.executescript(f.read())
+            conn.commit()
+            _ensure_admin_user(conn)
+    finally:
+        if USE_POSTGRES:
+            try:
+                conn.execute("SELECT pg_advisory_unlock(%s)", (_PG_LOCK_ID,))
+                conn.commit()
+            except Exception:
+                pass
+        conn.close()
 
 
 def close_db(conn):
