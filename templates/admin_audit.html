@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Audit Logs — SecureBank{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>Audit Logs</h2>
+  <p>System activity for monitoring and compliance</p>
+</div>
+
+<div class="card table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>User</th>
+        <th>Action</th>
+        <th>Details</th>
+        <th>IP Address</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+      <tr>
+        <td>{{ log.created_at }}</td>
+        <td>{{ log.username or 'System' }}</td>
+        <td><strong>{{ log.action }}</strong></td>
+        <td>{{ log.details or '—' }}</td>
+        <td>{{ log.ip_address or '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5">No audit logs yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

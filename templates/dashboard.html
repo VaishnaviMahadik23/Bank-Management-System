@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — SecureBank{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>Dashboard</h2>
+  <p>Overview of your accounts and recent activity</p>
+</div>
+
+<div class="toolbar">
+  <a href="{{ url_for('new_account') }}" class="btn btn-primary">Open New Account</a>
+  <a href="{{ url_for('deposit_page') }}" class="btn btn-success">Deposit</a>
+  <a href="{{ url_for('transfer_page') }}" class="btn btn-outline">Transfer Funds</a>
+</div>
+
+<h3 style="margin-bottom:1rem;font-size:1.1rem;">Your Accounts</h3>
+{% if accounts %}
+<div class="account-cards">
+  {% for acc in accounts %}
+  <div class="card account-card">
+    <div class="account-number">{{ acc.account_number }}</div>
+    <div class="balance">${{ "%.2f"|format(acc.balance) }}</div>
+    <div class="meta">
+      {{ acc.account_type|title }} &middot;
+      <span class="badge badge-{{ acc.status }}">{{ acc.status }}</span>
+    </div>
+    <div style="margin-top:1rem;">
+      <a href="{{ url_for('account_detail', account_id=acc.id) }}" class="btn btn-sm btn-outline">View Details</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <p>No accounts yet. <a href="{{ url_for('new_account') }}">Open your first account</a>.</p>
+</div>
+{% endif %}
+
+<h3 style="margin:1.5rem 0 1rem;font-size:1.1rem;">Recent Transactions</h3>
+<div class="card table-wrap">
+  {% if recent %}
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Account</th>
+        <th>Type</th>
+        <th>Amount</th>
+        <th>Balance After</th>
+        <th>Reference</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in recent %}
+      <tr>
+        <td>{{ t.created_at }}</td>
+        <td>{{ t.account_number }}</td>
+        <td><span class="badge badge-{{ t.type.split('_')[0] }}">{{ t.type|replace('_', ' ')|title }}</span></td>
+        <td class="{% if t.type in ('deposit', 'transfer_in') %}amount-positive{% else %}amount-negative{% endif %}">
+          {% if t.type in ('deposit', 'transfer_in') %}+{% else %}-{% endif %}${{ "%.2f"|format(t.amount) }}
+        </td>
+        <td>${{ "%.2f"|format(t.balance_after) }}</td>
+        <td style="font-family:monospace;font-size:0.8rem;">{{ t.transaction_ref }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--muted);">No transactions yet.</p>
+  {% endif %}
+</div>
+<a href="{{ url_for('transactions') }}" style="display:inline-block;margin-top:1rem;">View all transactions &rarr;</a>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Accounts — SecureBank{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>{% if is_admin %}All Accounts{% else %}My Accounts{% endif %}</h2>
+</div>
+
+{% if not is_admin %}
+<div class="toolbar">
+  <a href="{{ url_for('new_account') }}" class="btn btn-primary">Open New Account</a>
+</div>
+{% endif %}
+
+<div class="card table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Account Number</th>
+        {% if is_admin %}<th>Customer</th>{% endif %}
+        <th>Type</th>
+        <th>Balance</th>
+        <th>Status</th>
+        <th>Opened</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for acc in accounts %}
+      <tr>
+        <td style="font-family:monospace;font-weight:600;">{{ acc.account_number }}</td>
+        {% if is_admin %}
+        <td>{{ acc.full_name }} ({{ acc.username }})</td>
+        {% endif %}
+        <td>{{ acc.account_type|title }}</td>
+        <td class="amount-positive">${{ "%.2f"|format(acc.balance) }}</td>
+        <td><span class="badge badge-{{ acc.status }}">{{ acc.status }}</span></td>
+        <td>{{ acc.created_at[:10] }}</td>
+        <td>
+          <a href="{{ url_for('account_detail', account_id=acc.id) }}" class="btn btn-sm btn-outline">Details</a>
+          {% if is_admin %}
+          <form method="post" action="{{ url_for('admin_account_status', account_id=acc.id) }}" style="display:inline;">
+            <select name="status" onchange="this.form.submit()" class="btn btn-sm" style="padding:0.3rem;">
+              <option value="">Status...</option>
+              <option value="active">Active</option>
+              <option value="frozen">Frozen</option>
+              <option value="closed">Closed</option>
+            </select>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7">No accounts found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

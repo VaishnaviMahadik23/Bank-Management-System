@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Account {{ account.account_number }} — SecureBank{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>Account {{ account.account_number }}</h2>
+  <p>
+    {% if account.full_name is defined %}{{ account.full_name }} &middot; {% endif %}
+    {{ account.account_type|title }} &middot;
+    <span class="badge badge-{{ account.status }}">{{ account.status }}</span>
+  </p>
+</div>
+
+<div class="card-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
+  <div class="card stat-card">
+    <div class="value" style="color:var(--accent);">${{ "%.2f"|format(account.balance) }}</div>
+    <div class="label">Current Balance</div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <a href="{{ url_for('deposit_page') }}?account_id={{ account.id }}" class="btn btn-success">Deposit</a>
+  <a href="{{ url_for('withdraw_page') }}?account_id={{ account.id }}" class="btn btn-outline">Withdraw</a>
+  <a href="{{ url_for('transactions') }}?account_id={{ account.id }}" class="btn btn-outline">Full History</a>
+</div>
+
+<h3 style="margin-bottom:1rem;">Transaction History</h3>
+<div class="card table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Amount</th>
+        <th>Balance After</th>
+        <th>Description</th>
+        <th>Reference</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in transactions %}
+      <tr>
+        <td>{{ t.created_at }}</td>
+        <td><span class="badge badge-{{ t.type.split('_')[0] }}">{{ t.type|replace('_', ' ')|title }}</span></td>
+        <td class="{% if t.type in ('deposit', 'transfer_in') %}amount-positive{% else %}amount-negative{% endif %}">
+          {% if t.type in ('deposit', 'transfer_in') %}+{% else %}-{% endif %}${{ "%.2f"|format(t.amount) }}
+        </td>
+        <td>${{ "%.2f"|format(t.balance_after) }}</td>
+        <td>{{ t.description or '—' }}</td>
+        <td style="font-family:monospace;font-size:0.75rem;">{{ t.transaction_ref }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6">No transactions for this account.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

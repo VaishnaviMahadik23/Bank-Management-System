@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}New Account — SecureBank{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>Open New Account</h2>
+</div>
+<div class="card" style="max-width:480px;">
+  <form method="post">
+    <div class="form-group">
+      <label for="account_type">Account Type</label>
+      <select id="account_type" name="account_type">
+        <option value="savings">Savings</option>
+        <option value="checking">Checking</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="initial_deposit">Initial Deposit ($)</label>
+      <input type="number" id="initial_deposit" name="initial_deposit" min="0" step="0.01" value="0">
+    </div>
+    <button type="submit" class="btn btn-primary">Create Account</button>
+    <a href="{{ url_for('accounts') }}" class="btn btn-outline">Cancel</a>
+  </form>
+</div>
+{% endblock %}

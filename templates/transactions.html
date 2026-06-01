@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Transactions — SecureBank{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>Transaction History</h2>
+  <p>View and filter account transactions</p>
+</div>
+
+<form class="filter-form card" method="get" style="padding:1rem;">
+  <div class="form-group">
+    <label for="account_id">Account</label>
+    <select id="account_id" name="account_id">
+      <option value="">All accounts</option>
+      {% for acc in accounts %}
+      <option value="{{ acc.id }}" {% if filters.account_id and filters.account_id|int == acc.id %}selected{% endif %}>
+        {{ acc.account_number }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="from">From Date</label>
+    <input type="date" id="from" name="from" value="{{ filters.from or '' }}">
+  </div>
+  <div class="form-group">
+    <label for="to">To Date</label>
+    <input type="date" id="to" name="to" value="{{ filters.to or '' }}">
+  </div>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  <a href="{{ url_for('transactions') }}" class="btn btn-outline">Clear</a>
+</form>
+
+<div class="card table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Account</th>
+        <th>Type</th>
+        <th>Amount</th>
+        <th>Balance After</th>
+        <th>Description</th>
+        <th>Reference</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in transactions %}
+      <tr>
+        <td>{{ t.created_at }}</td>
+        <td>{{ t.account_number }}</td>
+        <td><span class="badge badge-{{ t.type.split('_')[0] }}">{{ t.type|replace('_', ' ')|title }}</span></td>
+        <td class="{% if t.type in ('deposit', 'transfer_in') %}amount-positive{% else %}amount-negative{% endif %}">
+          {% if t.type in ('deposit', 'transfer_in') %}+{% else %}-{% endif %}${{ "%.2f"|format(t.amount) }}
+        </td>
+        <td>${{ "%.2f"|format(t.balance_after) }}</td>
+        <td>{{ t.description or '—' }}</td>
+        <td style="font-family:monospace;font-size:0.75rem;">{{ t.transaction_ref }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7">No transactions found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

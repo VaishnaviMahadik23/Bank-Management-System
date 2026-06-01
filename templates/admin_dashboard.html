@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — SecureBank{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>Admin Dashboard</h2>
+  <p>System overview and operational metrics</p>
+</div>
+
+<div class="card-grid">
+  <div class="card stat-card">
+    <div class="value">{{ stats.customers }}</div>
+    <div class="label">Customers</div>
+  </div>
+  <div class="card stat-card">
+    <div class="value">{{ stats.accounts }}</div>
+    <div class="label">Accounts</div>
+  </div>
+  <div class="card stat-card">
+    <div class="value">${{ "%.2f"|format(stats.total_balance) }}</div>
+    <div class="label">Total Balance</div>
+  </div>
+  <div class="card stat-card">
+    <div class="value">{{ stats.transactions_today }}</div>
+    <div class="label">Transactions Today</div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <a href="{{ url_for('admin_customers') }}" class="btn btn-primary">Manage Customers</a>
+  <a href="{{ url_for('accounts') }}" class="btn btn-outline">All Accounts</a>
+  <a href="{{ url_for('deposit_page') }}" class="btn btn-success">Process Deposit</a>
+  <a href="{{ url_for('withdraw_page') }}" class="btn btn-outline">Process Withdrawal</a>
+  <a href="{{ url_for('admin_audit') }}" class="btn btn-outline">Audit Logs</a>
+</div>
+{% endblock %}
