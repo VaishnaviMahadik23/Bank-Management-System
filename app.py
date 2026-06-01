@@ -13,12 +13,17 @@ from flask import (
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from config import SECRET_KEY
+from config import IS_PRODUCTION, SECRET_KEY
 from database.db import get_db, init_db
 from services import create_account, deposit, log_audit, transfer, withdraw
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
+
+if IS_PRODUCTION:
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 
 @app.before_request
@@ -571,6 +576,8 @@ def admin_audit():
 
 
 if __name__ == "__main__":
-    os.makedirs(os.path.join(os.path.dirname(__file__), "data"), exist_ok=True)
+    from config import DATABASE_PATH
+
+    os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
     init_db()
-    app.run(debug=True, port=5000)
+    app.run(debug=not IS_PRODUCTION, port=int(os.environ.get("PORT", 5000)))

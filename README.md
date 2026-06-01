@@ -56,9 +56,20 @@ Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
 
 ### Environment Variables (optional)
 
-| Variable     | Description                          |
-|--------------|--------------------------------------|
-| `SECRET_KEY` | Flask session secret (set in prod)   |
+| Variable       | Description                          |
+|----------------|--------------------------------------|
+| `SECRET_KEY`   | Flask session secret (set in prod)   |
+| `FLASK_ENV`    | Set to `production` when deployed    |
+| `DATABASE_PATH`| Custom SQLite file path (optional)   |
+| `PORT`         | Server port (default `5000`)         |
+
+## Deployment
+
+Deploy to the cloud for a live demo URL (portfolio / resume).
+
+**Recommended:** [Render](https://render.com) (free tier + GitHub)
+
+See **[DEPLOY.md](DEPLOY.md)** for step-by-step instructions (Render Blueprint or manual setup, plus PythonAnywhere).
 
 ## Project Structure
 
